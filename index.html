@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Score Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .فريق {
+            margin-bottom: 10px;
+        }
+        .فريق-name, .فريق-score {
+            margin-right: 10px;
+        }
+        .btn-space {
+            margin-left: 5px;
+        }
+        #copyListBtn {
+        margin-left: 5px;
+        }
+        .btn-space {
+        margin-left: 5px;
+        }
+        .btn-group {
+        margin-right: 5px;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">مساعدك في الاحصاء - أكازا ساما </h1>
+        <input type="text" id="customTitleInput" class="form-control mb-3" placeholder="أدخل عنوان ...">
+        <button id="generateListBtn" class="btn btn-success mb-3"> استخلاج الائحة</button>
+        <button id="copyListBtn" class="btn btn-secondary mb-3">نسخ اللائحة</button>
+        <button id="addفريقBtn" class="btn btn-primary mb-3">اضافة فريق</button>
+        <button id="resetBtn" class="btn btn-danger mb-3">اعادة تعيين الصفحة</button>
+        <div id="فريقsContainer"></div>
+        <pre id="outputList" class="mt-4 p-3 bg-light"></pre>
+    </div>
+
+    <script>
+        let فريقCount = 0;
+
+        function loadفريقs() {
+            const savedفريقs = JSON.parse(localStorage.getItem('فريقs')) || [];
+            فريقCount = savedفريقs.length;
+
+            savedفريقs.forEach(فريقData => {
+                addفريق(فريقData.name, فريقData.score, false);
+            });
+        }
+
+        function saveفريقs() {
+            const فريقs = [];
+            document.querySelectorAll('.فريق').forEach(فريق => {
+                const فريقName = فريق.querySelector('.فريق-name').textContent || فريق.querySelector('.فريق-name').value;
+                const فريقScore = فريق.querySelector('.فريق-score').textContent;
+                فريقs.push({ name: فريقName, score: فريقScore });
+            });
+            localStorage.setItem('فريقs', JSON.stringify(فريقs));
+        }
+
+        function addفريق(name = `فريق ${فريقCount}`, score = 0, save = true) {
+            const فريقDiv = document.createElement('div');
+            فريقDiv.className = 'فريق d-flex flex-wrap align-items-center mb-2';
+
+            const فريقNameInput = document.createElement('input');
+            فريقNameInput.className = 'form-control فريق-name me-2';
+            فريقNameInput.type = 'text';
+            فريقNameInput.value = name;
+            فريقNameInput.style.width = 'auto';
+
+            const saveNameButton = document.createElement('button');
+            saveNameButton.textContent = 'Save';
+            saveNameButton.className = 'btn btn-success btn-sm me-2';
+            saveNameButton.addEventListener('click', function() {
+                const فريقNameSpan = document.createElement('span');
+                فريقNameSpan.className = 'فريق-name';
+                فريقNameSpan.textContent = فريقNameInput.value;
+                فريقNameInput.replaceWith(فريقNameSpan);
+                saveNameButton.remove();
+                saveفريقs();
+            });
+
+            const فريقScore = document.createElement('span');
+            فريقScore.className = 'فريق-score fw-bold me-2';
+            فريقScore.textContent = score;
+
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'btn-group me-2';
+            const values = [1, 10, 20, 30, 40, 50, 100, 200];
+
+            values.forEach(value => {
+                const addButton = document.createElement('button');
+                addButton.className = 'btn btn-secondary btn-sm';
+                addButton.textContent = `+${value}`;
+                addButton.addEventListener('click', function() {
+                    فريقScore.textContent = parseInt(فريقScore.textContent) + value;
+                    saveفريقs();
+                });
+                buttonsContainer.appendChild(addButton);
+            });
+
+            // Create a container for the custom subtract input and button
+            const customSubtractContainer = document.createElement('div');
+            customSubtractContainer.className = 'd-flex align-items-center me-2';
+
+            const subtractInput = document.createElement('input');
+            subtractInput.type = 'number';
+            subtractInput.className = 'form-control me-2';
+            subtractInput.placeholder = 'ادخل عدد النقاط اللتي تريد حذفها';
+            subtractInput.style.width = 'auto';
+
+            const subtractButton = document.createElement('button');
+            subtractButton.className = 'btn btn-danger btn-sm';
+            subtractButton.textContent = 'حذف النقاط';
+            subtractButton.addEventListener('click', function() {
+                const valueToSubtract = parseInt(subtractInput.value);
+                const currentScore = parseInt(فريقScore.textContent);
+                if (valueToSubtract > 0 && currentScore >= valueToSubtract) {
+                    فريقScore.textContent = currentScore - valueToSubtract;
+                    saveفريقs();
+                }
+            });
+
+            customSubtractContainer.appendChild(subtractInput);
+            customSubtractContainer.appendChild(subtractButton);
+
+            فريقDiv.appendChild(فريقNameInput);
+            فريقDiv.appendChild(saveNameButton);
+            فريقDiv.appendChild(فريقScore);
+            فريقDiv.appendChild(buttonsContainer);
+            فريقDiv.appendChild(customSubtractContainer);
+
+            document.getElementById('فريقsContainer').appendChild(فريقDiv);
+
+            if (save) {
+                saveفريقs();
+            }
+        }
+
+
+
+
+
+        document.getElementById('addفريقBtn').addEventListener('click', function() {
+            فريقCount++;
+            addفريق();
+        });
+
+        document.getElementById('generateListBtn').addEventListener('click', function() {
+            const title = document.getElementById('customTitleInput').value;
+            const today = new Date().toLocaleDateString();
+            const outputList = document.getElementById('outputList');
+            let outputText = `${title} - ${today}\n\n`;
+
+            const فريقs = document.querySelectorAll('.فريق');
+            فريقs.forEach(function(فريق) {
+                const فريقName = فريق.querySelector('.فريق-name').textContent;
+                const فريقScore = فريق.querySelector('.فريق-score').textContent;
+                outputText += `${فريقName} : ${فريقScore}\n`;
+            });
+
+            outputList.textContent = outputText;
+        });
+
+        document.getElementById('copyListBtn').addEventListener('click', function() {
+            const outputList = document.getElementById('outputList');
+            const textToCopy = outputList.textContent;  
+
+            navigator.clipboard.writeText(textToCopy).then(function() {
+                alert('تم نسخ اللائحة إلى الحافظة!');
+            }, function(err) {
+                console.error('فشل في نسخ النص: ', err);
+            });
+        });
+
+
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            if (confirm('هل تريد إعادة تعيين الصفحة؟ سيتم فقدان جميع البيانات المحفوظة.')) {
+                localStorage.removeItem('فريقs');
+                location.reload();
+            }
+        });
+
+        // تحميل اللاعبين عند تحميل الصفحة
+        window.onload = loadفريقs;
+    </script>
+</body>
+</html>
